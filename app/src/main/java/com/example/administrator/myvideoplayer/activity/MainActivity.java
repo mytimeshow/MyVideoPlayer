@@ -28,11 +28,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.administrator.myvideoplayer.R;
+import com.example.administrator.myvideoplayer.Uitl.ScreenRotateUtil;
 import com.example.administrator.myvideoplayer.View.MyVideoView;
 
 import java.io.File;
 
 public class MainActivity extends BaceActivity implements View.OnClickListener {
+    private ImageView lock_img;
     private MyVideoView mvideoView;
     private LinearLayout control_barlayout;
     private SeekBar play_seeBar;
@@ -58,6 +60,7 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
     private boolean HorizontalChange=false;
     long mLastTime=0;
     long mCurTime=0;
+    private boolean unLocked=true;
 
 
 
@@ -93,6 +96,11 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
         }
     };
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ScreenRotateUtil.getInstance(this).start(this);
+    }
 
     @Override
     protected int getLayout() {
@@ -101,6 +109,8 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
 
     @Override
     protected void initView() {
+        lock_img= (ImageView) findViewById(R.id.lock_img);
+        lock_img.setOnClickListener(this);
         maudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         mvideoView = (MyVideoView) findViewById(R.id.videoPlayer);
         voice_img = (ImageView) findViewById(R.id.voice_img);
@@ -157,6 +167,10 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
             handler.sendEmptyMessage(UPDATE_UL);
         }
 
+    }
+
+    public void scaleFull() {
+        ScreenRotateUtil.getInstance(this).toggleRotate();
     }
 
     @Override
@@ -260,12 +274,16 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
                     case MotionEvent.ACTION_DOWN:{
 
                         //单击事件
-                        if(control_barlayout.getVisibility()==View.GONE){
+                        if(control_barlayout.getVisibility()==View.GONE ){
                             control_barlayout.setVisibility(View.VISIBLE);
+                            if(lock_img.getVisibility()==View.GONE){
+                                lock_img.setVisibility(View.VISIBLE);
+                            }
                         }
                        handler.postDelayed(new Runnable() {
                            @Override
                            public void run() {
+                               lock_img.setVisibility(View.GONE);
                                control_barlayout.setVisibility(View.GONE);
                            }
                        }, time);
@@ -472,11 +490,13 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
         textView.setText(str);
     }
 
+
     @Override
     protected void onPause() {
         super.onPause();
         mvideoView.pause();
         handler.removeMessages(UPDATE_UL);
+        ScreenRotateUtil.getInstance(this).stop();
     }
 
     @Override
@@ -544,6 +564,18 @@ public class MainActivity extends BaceActivity implements View.OnClickListener {
 
 
                }
+                //scaleFull();
+                break;
+            case R.id.lock_img:
+                if(unLocked){
+                    lock_img.setImageResource(R.drawable.locked);
+                    unLocked=false;
+                }else {
+                    lock_img.setImageResource(R.drawable.unlock);
+                    unLocked=true;
+                }
+
+                ScreenRotateUtil.getInstance(MainActivity.this).setLockScreen();
                 break;
         }
     }
